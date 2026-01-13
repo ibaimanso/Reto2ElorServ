@@ -9,6 +9,8 @@ public class HibernateUtil {
 
 	private static SessionFactory buildSessionFactory() {
 		try {
+			
+			//creacion rama carlos
 			// Crear la SessionFactory desde hibernate.cfg.xml
 			Configuration configuration = new Configuration();
 			configuration.configure("hibernate.cfg.xml");
