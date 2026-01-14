@@ -143,6 +143,22 @@ public class Reuniones implements Serializable {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public Users getProfesor() {
+        return profesor;
+    }
+
+    public void setProfesor(Users profesor) {
+        this.profesor = profesor;
+    }
+
+    public Users getAlumno() {
+        return alumno;
+    }
+
+    public void setAlumno(Users alumno) {
+        this.alumno = alumno;
+    }
     
     @Override
     public String toString() {

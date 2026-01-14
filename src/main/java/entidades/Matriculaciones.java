@@ -59,6 +59,22 @@ public class Matriculaciones implements Serializable {
     public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
     }
+
+    public Users getAlumno() {
+        return alumno;
+    }
+
+    public void setAlumno(Users alumno) {
+        this.alumno = alumno;
+    }
+
+    public Ciclos getCiclo() {
+        return ciclo;
+    }
+
+    public void setCiclo(Ciclos ciclo) {
+        this.ciclo = ciclo;
+    }
     
     @Override
     public String toString() {

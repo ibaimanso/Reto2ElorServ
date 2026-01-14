@@ -1,0 +1,192 @@
+╔═══════════════════════════════════════════════════════════════╗
+║          CHECKLIST DE INICIO - ELORSERV                      ║
+╚═══════════════════════════════════════════════════════════════╝
+
+PASO A PASO PARA EJECUTAR TU SERVIDOR POR PRIMERA VEZ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 PREPARACIÓN (ANTES DE EJECUTAR)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+☐ 1. XAMPP Control Panel abierto
+     └─ MySQL debe estar en estado "Running" (verde)
+     └─ Si no está activo, click en "Start" junto a MySQL
+
+☐ 2. Verificar puerto MySQL
+     └─ Por defecto XAMPP usa puerto 3306
+     └─ Si usas otro puerto, edita hibernate.cfg.xml
+
+☐ 3. Base de datos importada
+     └─ Abre: http://localhost/phpmyadmin
+     └─ Verifica que existe: "reto2bbdd"
+     └─ Verifica que tiene datos (17 usuarios mínimo)
+     
+     Si no está importada:
+     ✓ Crear nueva base de datos: "reto2bbdd"
+     ✓ Importar → Seleccionar tu archivo SQL → Ejecutar
+
+☐ 4. Eclipse/IDE preparado
+     └─ Proyecto Reto2ElorServ cargado
+     └─ Sin errores de compilación
+     └─ Maven actualizado (si usas Maven)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 EJECUCIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+☐ 5. EJECUTAR SERVIDOR
+     
+     Archivo: src/main/java/MainServer.java
+     
+     Método: Click derecho → Run As → Java Application
+     
+     ✓ ESPERA A VER ESTE MENSAJE:
+     ╔═══════════════════════════════════════════════════════╗
+     ║         ELORSERV - SERVIDOR TCP                      ║
+     ╚═══════════════════════════════════════════════════════╝
+     
+     📊 PASO 1: Verificando conexión a la base de datos...
+        → Base de datos: reto2bbdd
+        → Usuarios registrados: 17
+     ✓ Conexión a base de datos exitosa
+     
+     🚀 PASO 2: Iniciando servidor de sockets...
+     === INICIANDO ELORSERV - SERVIDOR DE SOCKETS TCP ===
+     ✓ Servidor escuchando en puerto: 9000
+     ✓ Thread pool inicializado con 50 hilos máximos
+     ✓ Esperando conexiones de clientes ElorES...
+     
+     SI NO VES ESTO → Ve a SOLUCIÓN DE PROBLEMAS al final
+
+☐ 6. EJECUTAR CLIENTE DE PRUEBAS (en otra ventana/consola)
+     
+     Archivo: src/main/java/test/AutomaticTestClient.java
+     
+     Método: Click derecho → Run As → Java Application
+     
+     ✓ ESPERA A VER:
+     🔌 Conectando a localhost:9000...
+     ✓ Conectado exitosamente
+     
+     ╔═══════════════════════════════════════════╗
+     ║  SUITE DE PRUEBAS AUTOMÁTICAS - ELORSERV ║
+     ╚═══════════════════════════════════════════╝
+     
+     🧪 TEST: PING - Verificar que el servidor responde
+     📤 Request: PING
+     📥 Response Status: StatusCode{code=200, description='OK'}
+     ✓ PASÓ - Test exitoso
+     
+     [... más tests ...]
+     
+     ╔═══════════════════════════════════════════╗
+     ║           RESUMEN DE RESULTADOS          ║
+     ╚═══════════════════════════════════════════╝
+     ✓ Tests pasados: 7
+     ✗ Tests fallados: 0
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     Tasa de éxito: 100.0%
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ VERIFICACIÓN FINAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+☐ Servidor muestra: "Esperando conexiones de clientes..."
+☐ Cliente muestra: "Tasa de éxito: 100.0%"
+☐ En consola del servidor ves: "Nuevo cliente conectado [#1]"
+☐ Todos los tests pasaron (7/7)
+
+SI TODO ESTÁ ✓ → ¡FELICIDADES! Tu servidor funciona perfectamente
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ SOLUCIÓN DE PROBLEMAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PROBLEMA 1: "No se pudo conectar a la base de datos"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Verifica:
+□ XAMPP → MySQL está "Running"
+□ phpMyAdmin abre correctamente: http://localhost/phpmyadmin
+□ La base de datos "reto2bbdd" aparece en la lista
+□ hibernate.cfg.xml tiene puerto 3306 (no 3308)
+
+Comando SQL para verificar (ejecuta en phpMyAdmin):
+SELECT COUNT(*) FROM users;  -- Debe retornar: 17
+
+
+PROBLEMA 2: "Connection refused" al ejecutar cliente
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Causa: El servidor no está ejecutándose
+
+Solución:
+□ Verifica que MainServer.java está corriendo
+□ Busca en consola: "Servidor escuchando en puerto: 9000"
+□ Si no aparece, lee el error en rojo en la consola
+
+
+PROBLEMA 3: Tests fallan (menos de 100% de éxito)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Si LOGIN falla:
+  → Ejecuta en phpMyAdmin:
+    SELECT * FROM users WHERE username = 'profesor1';
+  → Debe retornar password: 123456
+
+Si GET_PROFILE falla:
+  → Revisa que el LOGIN fue exitoso primero
+  → Verifica logs del servidor
+
+Si PING falla:
+  → Problema de comunicación entre cliente-servidor
+  → Verifica firewall
+  → Verifica que el puerto 9000 no está en uso
+
+
+PROBLEMA 4: Puerto 9000 ya está en uso
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Windows:
+  netstat -ano | findstr :9000
+  taskkill /PID [número] /F
+
+O cambia el puerto en:
+  - server/SocketServer.java (línea con PORT = 9000)
+  - test/AutomaticTestClient.java (línea con SERVER_PORT = 9000)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 ARCHIVOS DE AYUDA CREADOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📄 README_INICIO_RAPIDO.md
+   └─ Guía completa del proyecto
+
+📄 GUIA_PRUEBAS_SOCKETS.md
+   └─ Guía detallada de testing
+
+📄 verificar_base_datos.sql
+   └─ Script para verificar tu base de datos en phpMyAdmin
+
+📄 CHECKLIST.txt (este archivo)
+   └─ Pasos rápidos para iniciar
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 CREDENCIALES DE PRUEBA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Usuario recomendado para pruebas:
+  Username: profesor1
+  Password: 123456
+  Nombre:   Roman Lopez
+  Tipo:     Profesor
+  ID:       3
+
+Otros usuarios disponibles (todos password: 123456):
+  - goduser (God Admin)
+  - adminuser (Administrador)
+  - profesor2, profesor4, jorgelopez, nereagomez, etc.
+  - alumno1, alumno2, alumno3, alumno4
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+¡BUENA SUERTE! 🚀
+
+Si todo funciona, verás este emoji: ✅

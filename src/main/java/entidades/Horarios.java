@@ -107,6 +107,22 @@ public class Horarios implements Serializable {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public Users getProfesor() {
+        return profesor;
+    }
+
+    public void setProfesor(Users profesor) {
+        this.profesor = profesor;
+    }
+
+    public Modulos getModulo() {
+        return modulo;
+    }
+
+    public void setModulo(Modulos modulo) {
+        this.modulo = modulo;
+    }
     
     @Override
     public String toString() {

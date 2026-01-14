@@ -43,6 +43,14 @@ public class Ciclos implements Serializable {
         this.nombre = nombre;
     }
     
+    public List<Modulos> getModulosList() {
+        return modulosList;
+    }
+
+    public void setModulosList(List<Modulos> modulosList) {
+        this.modulosList = modulosList;
+    }
+    
     @Override
     public String toString() {
         return "Ciclos{" +

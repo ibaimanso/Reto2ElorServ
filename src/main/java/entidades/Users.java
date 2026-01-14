@@ -188,6 +188,46 @@ public class Users implements Serializable {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public Tipos getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(Tipos tipo) {
+        this.tipo = tipo;
+    }
+
+    public List<Horarios> getHorariosList() {
+        return horariosList;
+    }
+
+    public void setHorariosList(List<Horarios> horariosList) {
+        this.horariosList = horariosList;
+    }
+
+    public List<Matriculaciones> getMatriculacionesList() {
+        return matriculacionesList;
+    }
+
+    public void setMatriculacionesList(List<Matriculaciones> matriculacionesList) {
+        this.matriculacionesList = matriculacionesList;
+    }
+
+    public List<Reuniones> getReunionesProfeList() {
+        return reunionesProfeList;
+    }
+
+    public void setReunionesProfeList(List<Reuniones> reunionesProfeList) {
+        this.reunionesProfeList = reunionesProfeList;
+    }
+
+    public List<Reuniones> getReunionesAlumnoList() {
+        return reunionesAlumnoList;
+    }
+
+    public void setReunionesAlumnoList(List<Reuniones> reunionesAlumnoList) {
+        this.reunionesAlumnoList = reunionesAlumnoList;
+    }
     
     @Override
     public String toString() {

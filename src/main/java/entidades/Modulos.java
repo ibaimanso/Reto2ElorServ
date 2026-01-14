@@ -82,6 +82,22 @@ public class Modulos implements Serializable {
     public void setCurso(Byte curso) {
         this.curso = curso;
     }
+
+    public Ciclos getCiclo() {
+        return ciclo;
+    }
+
+    public void setCiclo(Ciclos ciclo) {
+        this.ciclo = ciclo;
+    }
+
+    public List<Horarios> getHorariosList() {
+        return horariosList;
+    }
+
+    public void setHorariosList(List<Horarios> horariosList) {
+        this.horariosList = horariosList;
+    }
     
     @Override
     public String toString() {

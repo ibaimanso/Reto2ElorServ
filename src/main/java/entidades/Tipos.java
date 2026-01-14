@@ -55,6 +55,15 @@ public class Tipos implements Serializable {
         this.nameEu = nameEu;
     }
     
+    // Getters y Setters adicionales
+    public List<Users> getUsersList() {
+        return usersList;
+    }
+
+    public void setUsersList(List<Users> usersList) {
+        this.usersList = usersList;
+    }
+    
     @Override
     public String toString() {
         return "Tipos{" +
