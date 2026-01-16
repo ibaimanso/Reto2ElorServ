@@ -146,9 +146,18 @@ public class RequestProcessor {
                 return Response.badRequest("Email y contraseña son requeridos");
             }
             
-            // Descifrar contraseña con clave privada
-            PrivateKey privateKey = RSAEncryptionUtil.loadPrivateKey();
-            String plainPassword = RSAEncryptionUtil.decrypt(encryptedPassword, privateKey);
+            String plainPassword;
+            
+            // Intentar descifrar - si falla, asumir que viene en texto plano
+            try {
+                PrivateKey privateKey = RSAEncryptionUtil.loadPrivateKey();
+                plainPassword = RSAEncryptionUtil.decrypt(encryptedPassword, privateKey);
+                SocketLogger.debug("Contraseña descifrada con RSA");
+            } catch (Exception e) {
+                // Si falla el descifrado, asumir que es texto plano (modo desarrollo)
+                plainPassword = encryptedPassword;
+                SocketLogger.warning("Contraseña recibida sin cifrar (modo desarrollo)");
+            }
             
             // Llamar a AuthService.login
             UserDTO userDTO = authService.login(email, plainPassword);

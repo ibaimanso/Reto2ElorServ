@@ -10,26 +10,22 @@ public class HorarioDTO implements Serializable {
     private static final long serialVersionUID = 1L;
     
     private Integer id;
-    private String dia;  // LUNES, MARTES, etc.
-    private Byte hora;   // 1-8
+    private String dia; 
+    private Byte hora;  
     private String aula;
     private String observaciones;
     
-    // Información del profesor
     private Integer profesorId;
     private String profesorNombre;
     private String profesorApellidos;
     
-    // Información del módulo
     private Integer moduloId;
     private String moduloNombre;
     private String moduloNombreEus;
     
-    // Constructores
     public HorarioDTO() {
     }
     
-    // Getters y Setters
     public Integer getId() {
         return id;
     }

@@ -4,20 +4,15 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-/**
- * DTO para las peticiones del cliente al servidor.
- * Se serializa/deserializa en JSON usando Gson.
- */
-public class Request implements Serializable {
+ public class Request implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
     private ActionType action;
-    private String sessionToken;  // Token de sesión (null en LOGIN)
-    private Map<String, Object> data;  // Datos variables según la acción
+    private String sessionToken;  
+    private Map<String, Object> data; 
     private String timestamp;
     
-    // Constructores
     public Request() {
         this.timestamp = LocalDateTime.now().toString();
     }
@@ -35,7 +30,6 @@ public class Request implements Serializable {
         this.timestamp = LocalDateTime.now().toString();
     }
     
-    // Getters y Setters
     public ActionType getAction() {
         return action;
     }

@@ -3,20 +3,16 @@ package protocol;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-/**
- * DTO para las respuestas del servidor al cliente.
- * Se serializa/deserializa en JSON usando Gson.
- */
+
 public class Response implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
     private StatusCode status;
     private String message;
-    private Object data;  // Puede ser un DTO, una lista, o cualquier objeto
+    private Object data;  
     private String timestamp;
     
-    // Constructores
     public Response() {
         this.timestamp = LocalDateTime.now().toString();
     }
@@ -34,7 +30,6 @@ public class Response implements Serializable {
         this.timestamp = LocalDateTime.now().toString();
     }
     
-    // Métodos estáticos para crear respuestas comunes
     public static Response success(String message, Object data) {
         return new Response(StatusCode.SUCCESS, message, data);
     }
@@ -67,7 +62,6 @@ public class Response implements Serializable {
         return new Response(StatusCode.CONFLICT, message);
     }
     
-    // Getters y Setters
     public StatusCode getStatus() {
         return status;
     }

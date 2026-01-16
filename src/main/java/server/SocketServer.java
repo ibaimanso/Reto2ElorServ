@@ -11,37 +11,27 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Servidor principal de Sockets TCP para ElorServ.
- * Acepta conexiones de clientes ElorES y crea un hilo para cada uno.
- */
+
 public class SocketServer {
     
-    private static final int PORT = 9000;  // Puerto del servidor
-    private static final int MAX_THREADS = 50;  // Máximo de clientes concurrentes
+    private static final int PORT = 9000;  
+    private static final int MAX_THREADS = 50;  
     
     private ServerSocket serverSocket;
     private ExecutorService threadPool;
     private boolean running = false;
     private int clientCounter = 0;
     
-    /**
-     * Constructor del servidor.
-     */
+  
     public SocketServer() {
         this.threadPool = Executors.newFixedThreadPool(MAX_THREADS);
     }
     
-    /**
-     * Inicia el servidor TCP.
-     */
     public void start() {
         try {
-            // Inicializar claves RSA
             SocketLogger.info("=== INICIANDO ELORSERV - SERVIDOR DE SOCKETS TCP ===");
             RSAEncryptionUtil.initializeKeys();
             
-            // Crear ServerSocket
             serverSocket = new ServerSocket(PORT);
             running = true;
             
@@ -49,7 +39,6 @@ public class SocketServer {
             SocketLogger.info("✓ Thread pool inicializado con " + MAX_THREADS + " hilos máximos");
             SocketLogger.info("✓ Esperando conexiones de clientes ElorES...\n");
             
-            // Bucle principal: aceptar conexiones
             acceptConnections();
             
         } catch (IOException e) {

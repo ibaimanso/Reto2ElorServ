@@ -1,9 +1,5 @@
 package protocol;
 
-/**
- * Códigos de estado para las respuestas del servidor.
- * Similar a los códigos HTTP pero adaptados al protocolo de sockets.
- */
 public enum StatusCode {
     SUCCESS(200, "Operación exitosa"),
     CREATED(201, "Recurso creado exitosamente"),

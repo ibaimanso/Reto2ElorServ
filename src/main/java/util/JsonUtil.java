@@ -11,7 +11,6 @@ import com.google.gson.JsonSyntaxException;
 public class JsonUtil {
     
     private static final Gson gson = new GsonBuilder()
-            .setPrettyPrinting()
             .setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
             .create();
     

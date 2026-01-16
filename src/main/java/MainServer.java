@@ -11,7 +11,7 @@ import util.SocketLogger;
  * 3. Queda a la espera de conexiones de clientes
  * 
  * REQUISITOS PREVIOS:
- * - XAMPP ejecutándose con MySQL en puerto 3306
+ * - XAMPP ejecutándose con MySQL en puerto 3308
  * - Base de datos 'reto2bbdd' creada e importada
  * - Al menos un usuario en la tabla 'users' para hacer pruebas de login
  * 
