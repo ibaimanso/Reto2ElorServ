@@ -1,43 +1,133 @@
-package  menu.modelo;
+package menu.modelo;
 
 import jakarta.persistence.*;
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "horario")
-public class Horario implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Table(
+    name = "horarios",
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"ciclo_id", "curso", "dia", "hora"})
+    }
+)
+public class Horario {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "profesor_id", nullable = false)
-    private Integer profesorId;
+    private String dia;
+    private Integer hora;
+    private String aula;
+    private String observaciones;
 
-    @Column(name = "modulo_id", nullable = false)
-    private Integer moduloId;
+    private LocalDateTime created_at;
+    private LocalDateTime updated_at;
 
-    @Column(name = "fecha_hora_inicio", nullable = false)
-    private LocalDateTime fechaHoraInicio;
+    // ===== PROFESOR =====
+    @ManyToOne
+    @JoinColumn(name = "profe_id")
+    private User profesor;
 
-    @Column(name = "fecha_hora_fin", nullable = false)
-    private LocalDateTime fechaHoraFin;
+    // ===== MODULO =====
+    @ManyToOne
+    @JoinColumn(name = "modulo_id")
+    private Modulo modulo;
 
-    // Getters y Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    // ===== CICLO =====
+    @ManyToOne
+    @JoinColumn(name = "ciclo_id")
+    private Ciclo ciclo;
 
-    public Integer getProfesorId() { return profesorId; }
-    public void setProfesorId(Integer profesorId) { this.profesorId = profesorId; }
+    // ===== CURSO =====
+    private Integer curso;
 
-    public Integer getModuloId() { return moduloId; }
-    public void setModuloId(Integer moduloId) { this.moduloId = moduloId; }
+    // ================= GETTERS / SETTERS =================
 
-    public LocalDateTime getFechaHoraInicio() { return fechaHoraInicio; }
-    public void setFechaHoraInicio(LocalDateTime fechaHoraInicio) { this.fechaHoraInicio = fechaHoraInicio; }
+    public Integer getId() {
+        return id;
+    }
 
-    public LocalDateTime getFechaHoraFin() { return fechaHoraFin; }
-    public void setFechaHoraFin(LocalDateTime fechaHoraFin) { this.fechaHoraFin = fechaHoraFin; }
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getDia() {
+        return dia;
+    }
+
+    public void setDia(String dia) {
+        this.dia = dia;
+    }
+
+    public Integer getHora() {
+        return hora;
+    }
+
+    public void setHora(Integer hora) {
+        this.hora = hora;
+    }
+
+    public String getAula() {
+        return aula;
+    }
+
+    public void setAula(String aula) {
+        this.aula = aula;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
+    public LocalDateTime getCreated_at() {
+        return created_at;
+    }
+
+    public void setCreated_at(LocalDateTime created_at) {
+        this.created_at = created_at;
+    }
+
+    public LocalDateTime getUpdated_at() {
+        return updated_at;
+    }
+
+    public void setUpdated_at(LocalDateTime updated_at) {
+        this.updated_at = updated_at;
+    }
+
+    public User getProfesor() {
+        return profesor;
+    }
+
+    public void setProfesor(User profesor) {
+        this.profesor = profesor;
+    }
+
+    public Modulo getModulo() {
+        return modulo;
+    }
+
+    public void setModulo(Modulo modulo) {
+        this.modulo = modulo;
+    }
+
+    public Ciclo getCiclo() {
+        return ciclo;
+    }
+
+    public void setCiclo(Ciclo ciclo) {
+        this.ciclo = ciclo;
+    }
+
+    public Integer getCurso() {
+        return curso;
+    }
+
+    public void setCurso(Integer curso) {
+        this.curso = curso;
+    }
 }

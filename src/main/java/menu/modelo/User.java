@@ -1,79 +1,175 @@
-package  menu.modelo;
+package menu.modelo;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.*;
-import java.io.Serializable;
-import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
-@Table(name = "users") // nombre de la tabla en la base de datos
-public class User implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Table(name = "users")
+public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, unique = true)
-    private String username;
-
-    @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false, unique = true)
     private String email;
-
+    private String username;
+    private String password;
     private String nombre;
     private String apellidos;
     private String dni;
     private String direccion;
     private String telefono1;
     private String telefono2;
-    private Integer tipoId;
-    private String argazkiaUrl;
+    private String argazkia_url;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime created_at;
+    private LocalDateTime updated_at;
 
-    // Getters y Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    // ===== RELACIÓN TIPO (NO SE SERIALIZA) =====
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "tipo_id")
+    private Tipo tipo;
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+    // ===== RELACIONES QUE NO VAN A ANDROID =====
+    @JsonIgnore
+    @OneToMany(mappedBy = "profesor")
+    private List<Horario> horariosProfesor;
 
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+    @JsonIgnore
+    @OneToMany(mappedBy = "alumno")
+    private List<Matriculacion> matriculaciones;
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    @JsonIgnore
+    @OneToMany(mappedBy = "profesor")
+    private List<Reunion> reunionesProfesor;
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    @JsonIgnore
+    @OneToMany(mappedBy = "alumno")
+    private List<Reunion> reunionesAlumno;
 
-    public String getApellidos() { return apellidos; }
-    public void setApellidos(String apellidos) { this.apellidos = apellidos; }
+    // ===== GETTERS / SETTERS =====
 
-    public String getDni() { return dni; }
-    public void setDni(String dni) { this.dni = dni; }
+    public Integer getId() {
+        return id;
+    }
 
-    public String getDireccion() { return direccion; }
-    public void setDireccion(String direccion) { this.direccion = direccion; }
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-    public String getTelefono1() { return telefono1; }
-    public void setTelefono1(String telefono1) { this.telefono1 = telefono1; }
+    public String getEmail() {
+        return email;
+    }
+    
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-    public String getTelefono2() { return telefono2; }
-    public void setTelefono2(String telefono2) { this.telefono2 = telefono2; }
+    public String getUsername() {
+        return username;
+    }
+    
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
-    public Integer getTipoId() { return tipoId; }
-    public void setTipoId(Integer tipoId) { this.tipoId = tipoId; }
+    public String getPassword() {
+        return password;
+    }
+    
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
-    public String getArgazkiaUrl() { return argazkiaUrl; }
-    public void setArgazkiaUrl(String argazkiaUrl) { this.argazkiaUrl = argazkiaUrl; }
+    public String getNombre() {
+        return nombre;
+    }
+    
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getApellidos() {
+        return apellidos;
+    }
+    
+    public void setApellidos(String apellidos) {
+        this.apellidos = apellidos;
+    }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getDni() {
+        return dni;
+    }
+    
+    public void setDni(String dni) {
+        this.dni = dni;
+    }
+
+    public String getDireccion() {
+        return direccion;
+    }
+    
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public String getTelefono1() {
+        return telefono1;
+    }
+    
+    public void setTelefono1(String telefono1) {
+        this.telefono1 = telefono1;
+    }
+
+    public String getTelefono2() {
+        return telefono2;
+    }
+    
+    public void setTelefono2(String telefono2) {
+        this.telefono2 = telefono2;
+    }
+
+    public String getArgazkia_url() {
+        return argazkia_url;
+    }
+
+    public void setArgazkia_url(String argazkia_url) {
+        this.argazkia_url = argazkia_url;
+    }
+
+    public LocalDateTime getCreated_at() {
+        return created_at;
+    }
+    
+    public void setCreated_at(LocalDateTime created_at) {
+        this.created_at = created_at;
+    }
+
+    public LocalDateTime getUpdated_at() {
+        return updated_at;
+    }
+    
+    public void setUpdated_at(LocalDateTime updated_at) {
+        this.updated_at = updated_at;
+    }
+
+    // ===== CAMPO VIRTUAL PARA ANDROID =====
+    @JsonProperty("tipo_id")
+    public Integer getTipoId() {
+        return tipo != null ? tipo.getId() : null;
+    }
+
+    // ===== GETTERS INTERNOS (NO JSON) =====
+    public Tipo getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(Tipo tipo) {
+        this.tipo = tipo;
+    }
 }

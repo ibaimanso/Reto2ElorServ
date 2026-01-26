@@ -1,24 +1,65 @@
-package  menu.modelo;
+package menu.modelo;
 
 import jakarta.persistence.*;
-import java.io.Serializable;
+import java.util.List;
 
 @Entity
-@Table(name = "ciclo")
-public class Ciclo implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Table(name="ciclos")
+public class Ciclo {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    // Getters y Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    @OneToMany(mappedBy="ciclo")
+    private List<Modulo> modulos;
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    @OneToMany(mappedBy="ciclo")
+    private List<Matriculacion> matriculaciones;
+
+    @OneToMany(mappedBy="ciclo")
+    private List<Horario> horarios;
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getNombre() {
+		return nombre;
+	}
+
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
+
+	public List<Modulo> getModulos() {
+		return modulos;
+	}
+
+	public void setModulos(List<Modulo> modulos) {
+		this.modulos = modulos;
+	}
+
+	public List<Matriculacion> getMatriculaciones() {
+		return matriculaciones;
+	}
+
+	public void setMatriculaciones(List<Matriculacion> matriculaciones) {
+		this.matriculaciones = matriculaciones;
+	}
+
+	public List<Horario> getHorarios() {
+		return horarios;
+	}
+
+	public void setHorarios(List<Horario> horarios) {
+		this.horarios = horarios;
+	}
+
+    // getters setters
 }

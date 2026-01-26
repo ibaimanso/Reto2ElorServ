@@ -1,30 +1,66 @@
-package  menu.modelo;
-
+package menu.modelo;
+import java.util.List;
+import java.util.ArrayList;
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "matriculacion")
-public class Matriculacion implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Table(name = "matriculaciones")
+public class Matriculacion {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "alumno_id", nullable = false)
-    private Integer alumnoId;
+    private Integer curso;
+    private LocalDate fecha;
 
-    @Column(name = "Ciclo_Id", nullable = false)
-    private Integer cicloId;
+    @ManyToOne
+    @JoinColumn(name = "alum_id")
+    private User alumno;
 
-    // Getters y Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    @ManyToOne
+    @JoinColumn(name = "ciclo_id")
+    private Ciclo ciclo;
 
-    public Integer getAlumnoId() { return alumnoId; }
-    public void setAlumnoId(Integer alumnoId) { this.alumnoId = alumnoId; }
+	public Integer getId() {
+		return id;
+	}
 
-    public Integer getModuloId() { return cicloId; }
-    public void setModuloId(Integer moduloId) { this.cicloId = moduloId; }
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Integer getCurso() {
+		return curso;
+	}
+
+	public void setCurso(Integer curso) {
+		this.curso = curso;
+	}
+
+	public LocalDate getFecha() {
+		return fecha;
+	}
+
+	public void setFecha(LocalDate fecha) {
+		this.fecha = fecha;
+	}
+
+	public User getAlumno() {
+		return alumno;
+	}
+
+	public void setAlumno(User alumno) {
+		this.alumno = alumno;
+	}
+
+	public Ciclo getCiclo() {
+		return ciclo;
+	}
+
+	public void setCiclo(Ciclo ciclo) {
+		this.ciclo = ciclo;
+	}
 }
+

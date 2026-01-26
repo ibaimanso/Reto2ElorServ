@@ -1,13 +1,17 @@
 package menu.servicios;
 
+import menu.SecurityConfig.PasswordUtil;
 import menu.modelo.User;
 import menu.repositorios.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
-import javax.crypto.Cipher;
-import java.security.PrivateKey;
-import java.util.Base64;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class UserService {
@@ -18,33 +22,51 @@ public class UserService {
     @Autowired
     private CryptoService cryptoService;
 
-    // Login usando RSA-OAEP/SHA-256
-    public User login(String username, String passwordCifradaBase64) throws Exception {
-        User usuario = userRepository.findByUsername(username);
+    @Autowired
+    private EmailService emailService; // <-- Inyección de EmailService
 
-        if (usuario == null) return null;
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-        // Descifra la contraseña enviada desde el navegador
-        String passwordPlano = rsaDecrypt(passwordCifradaBase64, cryptoService.getPrivateKey());
-
-        // Compara con la contraseña guardada en la DB (texto plano)
-        if (passwordPlano.equals(usuario.getPassword())) {
-            return usuario;
-        } else {
-            return null; // contraseña incorrecta
+    // Login descifrando contraseña RSA y comparando con hash en DB
+    public User login(String username, String passwordCifrada) throws Exception {
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            throw new IllegalArgumentException("USUARIO_NO_EXISTE");
         }
+
+        String passwordPlano = cryptoService.decrypt(passwordCifrada);
+
+        if (!encoder.matches(passwordPlano, user.getPassword())) {
+            throw new IllegalArgumentException("PASSWORD_INCORRECTA");
+        }
+
+        return user;
     }
 
-    private String rsaDecrypt(String textoCifradoBase64, PrivateKey privateKey) throws Exception {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding"); 
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+    // Recuperar contraseña y enviar email
+    public void forgotPassword(String email) throws Exception {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new IllegalArgumentException("USUARIO_NO_EXISTE");
+        }
 
-        byte[] bytesCifrados = Base64.getDecoder().decode(textoCifradoBase64);
-        byte[] bytesDescifrados = cipher.doFinal(bytesCifrados);
+        // Generar nueva contraseña aleatoria
+        String tempPassword = PasswordUtil.generateRandomPassword(10);
 
-        return new String(bytesDescifrados); // UTF-8
+        // Guardar contraseña encriptada en DB
+        String hashed = encoder.encode(tempPassword);
+        user.setPassword(hashed);
+        userRepository.save(user);
+
+        // Enviar correo con la nueva contraseña
+        emailService.sendPasswordReset(email, tempPassword);
     }
-
-
+    
+    
+    public User getUserById(int id) {
+        return userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    }
+    
 
 }
