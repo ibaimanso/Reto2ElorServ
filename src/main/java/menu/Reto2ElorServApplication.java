@@ -26,11 +26,11 @@ import util.HibernateUtil;
     ApplicationRunner socketServerRunner() {
         return args -> {
             SocketServer server = new SocketServer();
-            // Start in a separate thread so it doesn't block Spring Boot startup
+
+            // Iniciar el servidor de sockets en un hilo separado para que no bloquee la app de Spring Boot
             Thread t = new Thread(server::start, "socket-server-thread");
             t.setDaemon(true);
             t.start();
-            // Register shutdown hook to close Hibernate on app stop
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 server.shutdown();
                 HibernateUtil.shutdown();
