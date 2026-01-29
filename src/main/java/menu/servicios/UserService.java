@@ -23,7 +23,7 @@ public class UserService {
     private CryptoService cryptoService;
 
     @Autowired
-    private EmailService emailService; // <-- Inyección de EmailService
+    private EmailService emailService;
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 

@@ -9,6 +9,7 @@ public enum ActionType {
     UPDATE_REUNION,
     DELETE_REUNION,
     GET_ALUMNOS,
+    GET_PROFESORES,
     GET_PERFIL,
     UPDATE_PERFIL,
     OTHER 

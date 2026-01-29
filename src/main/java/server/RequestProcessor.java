@@ -22,6 +22,12 @@ public class RequestProcessor {
                     return handleGetPerfil(request);
                 case GET_ALUMNOS:
                     return handleGetAlumnos(request);
+                case GET_PROFESORES:
+                    return handleGetProfesores(request);
+                case GET_HORARIO:
+                    return handleGetHorario(request);
+                case GET_REUNIONES:
+                    return handleGetReuniones(request);
                 case DISCONNECT:
                     return handleDisconnect(request);
                 default:
@@ -141,7 +147,7 @@ public class RequestProcessor {
                 Object[] result = (Object[]) session.createNativeQuery(
                     "SELECT u.id, u.email, u.username, u.nombre, u.apellidos, u.dni, " +
                     "u.direccion, u.telefono1, u.telefono2, u.tipo_id, u.argazkia_url " +
-                    "FROM users u WHERE u.id = :userId")
+                    "FROM users u WHERE u.id = :userId")	
                     .setParameter("userId", userId)
                     .uniqueResult();
                 
@@ -294,6 +300,305 @@ public class RequestProcessor {
             SocketLogger.error("Error en handleGetAlumnos", e);
             e.printStackTrace();
             return Response.error("Error obteniendo alumnos: " + e.getMessage());
+        }
+    }
+    
+    private Response handleGetProfesores(Request request) {
+        try {
+            SocketLogger.info("=== PROCESANDO GET_PROFESORES ===");
+            
+            // No requiere payload específico, devuelve todos los profesores
+            SocketLogger.info("Obteniendo lista de todos los profesores");
+            
+            // Buscar profesores en BD
+            Session session = HibernateUtil.getSessionFactory().openSession();
+            
+            try {
+                // Query para obtener todos los usuarios con tipo_id = 3 (profesores)
+                java.util.List<Object[]> results = session.createNativeQuery(
+                    "SELECT u.id, u.nombre, u.apellidos, u.email " +
+                    "FROM users u " +
+                    "WHERE u.tipo_id = 3 " +
+                    "ORDER BY u.apellidos, u.nombre")
+                    .getResultList();
+                
+                SocketLogger.info("Se encontraron " + results.size() + " profesores en el sistema");
+                
+                // Verificar si se encontraron profesores
+                if (results.isEmpty()) {
+                    SocketLogger.warning("No se encontraron profesores en el sistema");
+                    return Response.success("No hay profesores registrados", "[]");
+                }
+                
+                // Construir arreglo JSON con los datos de los profesores
+                StringBuilder profesoresData = new StringBuilder("[");
+                boolean first = true;
+                
+                for (Object[] profesor : results) {
+                    if (!first) {
+                        profesoresData.append(",");
+                    }
+                    first = false;
+                    
+                    int id = ((Number) profesor[0]).intValue();
+                    String nombre = profesor[1] != null ? (String) profesor[1] : "";
+                    String apellidos = profesor[2] != null ? (String) profesor[2] : "";
+                    String email = profesor[3] != null ? (String) profesor[3] : "";
+                    
+                    // Escapar comillas en strings para JSON válido
+                    nombre = nombre.replace("\"", "\\\"");
+                    apellidos = apellidos.replace("\"", "\\\"");
+                    email = email.replace("\"", "\\\"");
+                    
+                    String profesorJson = String.format(
+                        "{\"id\":%d,\"nombre\":\"%s\",\"apellidos\":\"%s\",\"email\":\"%s\"}",
+                        id, nombre, apellidos, email
+                    );
+                    
+                    profesoresData.append(profesorJson);
+                }
+                
+                profesoresData.append("]");
+                
+                SocketLogger.info("Profesores obtenidos exitosamente: " + results.size() + " profesores");
+                return Response.success("Profesores obtenidos", profesoresData.toString());
+                
+            } catch (Exception e) {
+                SocketLogger.error("Error en consulta BD para profesores", e);
+                throw e;
+            } finally {
+                session.close();
+            }
+            
+        } catch (Exception e) {
+            SocketLogger.error("Error en handleGetProfesores", e);
+            e.printStackTrace();
+            return Response.error("Error obteniendo profesores: " + e.getMessage());
+        }
+    }
+    
+    private Response handleGetHorario(Request request) {
+        try {
+            SocketLogger.info("=== PROCESANDO GET_HORARIO ===");
+            
+            // Parsear payload con Jackson
+            JsonNode payload = objectMapper.readTree(request.getPayload());
+            
+            if (!payload.has("profesorId")) {
+                SocketLogger.warning("Falta campo profesorId");
+                return Response.badRequest("profesorId es requerido");
+            }
+            
+            int profesorId = payload.get("profesorId").asInt();
+            SocketLogger.info("Obteniendo horario para el profesor ID: " + profesorId);
+            
+            // Buscar horario en BD
+            Session session = HibernateUtil.getSessionFactory().openSession();
+            
+            try {
+                // Query con JOINs para obtener el horario completo con nombres de módulos y ciclos
+                java.util.List<Object[]> results = session.createNativeQuery(
+                    "SELECT h.id, h.dia, h.hora, h.profe_id, h.modulo_id, h.aula, " +
+                    "h.observaciones, h.ciclo_id, h.curso, " +
+                    "m.nombre as modulo_nombre, " +
+                    "c.nombre as ciclo_nombre " +
+                    "FROM horarios h " +
+                    "LEFT JOIN modulos m ON h.modulo_id = m.id " +
+                    "LEFT JOIN ciclos c ON h.ciclo_id = c.id " +
+                    "WHERE h.profe_id = :profesorId " +
+                    "ORDER BY FIELD(h.dia, 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'), h.hora")
+                    .setParameter("profesorId", profesorId)
+                    .getResultList();
+                
+                SocketLogger.info("Se encontraron " + results.size() + " entradas de horario para el profesor ID: " + profesorId);
+                
+                // Verificar si se encontró horario
+                if (results.isEmpty()) {
+                    SocketLogger.warning("No se encontró horario para el profesor ID: " + profesorId);
+                    return Response.error("No hay horario disponible para este profesor");
+                }
+                
+                // Construir arreglo JSON con los datos del horario
+                StringBuilder horarioData = new StringBuilder("[");
+                boolean first = true;
+                
+                for (Object[] horario : results) {
+                    if (!first) {
+                        horarioData.append(",");
+                    }
+                    first = false;
+                    
+                    int id = ((Number) horario[0]).intValue();
+                    String dia = (String) horario[1];
+                    int hora = ((Number) horario[2]).intValue();
+                    int profeId = ((Number) horario[3]).intValue();
+                    int moduloId = ((Number) horario[4]).intValue();
+                    String aula = horario[5] != null ? (String) horario[5] : "";
+                    String observaciones = horario[6] != null ? (String) horario[6] : "";
+                    String cicloId = horario[7] != null ? horario[7].toString() : "null";
+                    String curso = horario[8] != null ? horario[8].toString() : "null";
+                    String moduloNombre = horario[9] != null ? (String) horario[9] : "";
+                    String cicloNombre = horario[10] != null ? (String) horario[10] : "";
+                    
+                    // Escapar comillas para JSON válido
+                    aula = aula.replace("\"", "\\\"");
+                    observaciones = observaciones.replace("\"", "\\\"");
+                    moduloNombre = moduloNombre.replace("\"", "\\\"");
+                    cicloNombre = cicloNombre.replace("\"", "\\\"");
+                    
+                    String horarioJson = String.format(
+                        "{\"id\":%d,\"dia\":\"%s\",\"hora\":%d,\"profe_id\":%d," +
+                        "\"modulo_id\":%d,\"aula\":\"%s\",\"observaciones\":\"%s\"," +
+                        "\"ciclo_id\":%s,\"curso\":%s,\"modulo_nombre\":\"%s\",\"ciclo_nombre\":\"%s\"}",
+                        id, dia, hora, profeId, moduloId, aula, observaciones, 
+                        cicloId, curso, moduloNombre, cicloNombre
+                    );
+                    
+                    horarioData.append(horarioJson);
+                }
+                
+                horarioData.append("]");
+                
+                SocketLogger.info("Horario obtenido exitosamente: " + results.size() + " entradas");
+                return Response.success("Horario obtenido correctamente", horarioData.toString());
+                
+            } catch (Exception e) {
+                SocketLogger.error("Error en consulta BD para horario", e);
+                throw e;
+            } finally {
+                session.close();
+            }
+            
+        } catch (Exception e) {
+            SocketLogger.error("Error en handleGetHorario", e);
+            e.printStackTrace();
+            return Response.error("Error obteniendo horario: " + e.getMessage());
+        }
+    }
+    
+    private Response handleGetReuniones(Request request) {
+        try {
+            SocketLogger.info("=== PROCESANDO GET_REUNIONES ===");
+            
+            // Parsear payload con Jackson
+            JsonNode payload = objectMapper.readTree(request.getPayload());
+            
+            if (!payload.has("profesorId")) {
+                SocketLogger.warning("Falta campo profesorId");
+                return Response.badRequest("profesorId es requerido");
+            }
+            
+            int profesorId = payload.get("profesorId").asInt();
+            SocketLogger.info("Obteniendo reuniones para el profesor ID: " + profesorId);
+            
+            // Buscar reuniones en BD
+            Session session = HibernateUtil.getSessionFactory().openSession();
+            
+            try {
+                // Query para obtener reuniones con cálculo de día y hora
+                java.util.List<Object[]> results = session.createNativeQuery(
+                    "SELECT r.id_reunion, r.estado, r.profesor_id, r.alumno_id, " +
+                    "r.titulo, r.asunto, r.aula, r.fecha, " +
+                    "DAYNAME(r.fecha) as dia_semana, " +
+                    "HOUR(r.fecha) as hora_reunion " +
+                    "FROM reuniones r " +
+                    "WHERE r.profesor_id = :profesorId " +
+                    "ORDER BY r.fecha")
+                    .setParameter("profesorId", profesorId)
+                    .getResultList();
+                
+                SocketLogger.info("Se encontraron " + results.size() + " reuniones para el profesor ID: " + profesorId);
+                
+                // Si no hay reuniones, retornar array vacío (no es error)
+                if (results.isEmpty()) {
+                    SocketLogger.info("No hay reuniones para el profesor ID: " + profesorId);
+                    return Response.success("No hay reuniones programadas", "[]");
+                }
+                
+                // Construir arreglo JSON con los datos de las reuniones
+                StringBuilder reunionesData = new StringBuilder("[");
+                boolean first = true;
+                
+                for (Object[] reunion : results) {
+                    if (!first) {
+                        reunionesData.append(",");
+                    }
+                    first = false;
+                    
+                    int idReunion = ((Number) reunion[0]).intValue();
+                    String estado = reunion[1] != null ? (String) reunion[1] : "pendiente";
+                    String profesorIdStr = reunion[2] != null ? reunion[2].toString() : "null";
+                    String alumnoIdStr = reunion[3] != null ? reunion[3].toString() : "null";
+                    String titulo = reunion[4] != null ? (String) reunion[4] : "";
+                    String asunto = reunion[5] != null ? (String) reunion[5] : "";
+                    String aula = reunion[6] != null ? (String) reunion[6] : "";
+                    // fecha en reunion[7]
+                    String diaSemana = reunion[8] != null ? (String) reunion[8] : "";
+                    String horaStr = reunion[9] != null ? reunion[9].toString() : "0";
+                    
+                    // Mapear DAYNAME inglés a español
+                    String dia = mapearDiaSemana(diaSemana);
+                    
+                    // Escapar comillas para JSON válido
+                    titulo = titulo.replace("\"", "\\\"");
+                    asunto = asunto.replace("\"", "\\\"");
+                    aula = aula.replace("\"", "\\\"");
+                    
+                    String reunionJson = String.format(
+                        "{\"id_reunion\":%d,\"estado\":\"%s\",\"profesor_id\":%s," +
+                        "\"alumno_id\":%s,\"titulo\":\"%s\",\"asunto\":\"%s\"," +
+                        "\"aula\":\"%s\",\"dia\":\"%s\",\"hora\":%s}",
+                        idReunion, estado, profesorIdStr, alumnoIdStr, 
+                        titulo, asunto, aula, dia, horaStr
+                    );
+                    
+                    reunionesData.append(reunionJson);
+                }
+                
+                reunionesData.append("]");
+                
+                SocketLogger.info("Reuniones obtenidas exitosamente: " + results.size() + " reuniones");
+                return Response.success("Reuniones obtenidas correctamente", reunionesData.toString());
+                
+            } catch (Exception e) {
+                SocketLogger.error("Error en consulta BD para reuniones", e);
+                throw e;
+            } finally {
+                session.close();
+            }
+            
+        } catch (Exception e) {
+            SocketLogger.error("Error en handleGetReuniones", e);
+            e.printStackTrace();
+            return Response.error("Error obteniendo reuniones: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Mapea el nombre del día en inglés (DAYNAME) a español
+     */
+    private String mapearDiaSemana(String dayName) {
+        if (dayName == null || dayName.isEmpty()) {
+            return "";
+        }
+        
+        switch (dayName.toUpperCase()) {
+            case "MONDAY":
+                return "LUNES";
+            case "TUESDAY":
+                return "MARTES";
+            case "WEDNESDAY":
+                return "MIERCOLES";
+            case "THURSDAY":
+                return "JUEVES";
+            case "FRIDAY":
+                return "VIERNES";
+            case "SATURDAY":
+                return "SABADO";
+            case "SUNDAY":
+                return "DOMINGO";
+            default:
+                return dayName;
         }
     }
 }
