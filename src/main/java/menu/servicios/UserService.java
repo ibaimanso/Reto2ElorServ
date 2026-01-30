@@ -7,6 +7,7 @@ import menu.repositorios.UserRepository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -62,11 +63,37 @@ public class UserService {
         emailService.sendPasswordReset(email, tempPassword);
     }
     
+    // GET - SELECT all users
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
     
+    // GET - SELECT user by id
     public User getUserById(int id) {
         return userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
     
-
+    // POST - INSERT new user
+    public User createUser(User user) {
+        // Encriptar contraseña antes de guardar
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            user.setPassword(encoder.encode(user.getPassword()));
+        }
+        return userRepository.save(user);
+    }
+    
+    // PUT - UPDATE user
+    public User updateUser(User user) {
+        // Si hay nueva contraseña, encriptarla
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            user.setPassword(encoder.encode(user.getPassword()));
+        }
+        return userRepository.save(user);
+    }
+    
+    // DELETE - DELETE user
+    public void deleteUser(int id) {
+        userRepository.deleteById(id);
+    }
 }
