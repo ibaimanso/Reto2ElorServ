@@ -5,9 +5,13 @@ import protocol.Response;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 import util.HibernateUtil;
 import util.SocketLogger;
 import security.PasswordUtil;
+import menu.servicios.EmailService;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class RequestProcessor {
     
@@ -28,6 +32,12 @@ public class RequestProcessor {
                     return handleGetHorario(request);
                 case GET_REUNIONES:
                     return handleGetReuniones(request);
+                case CREATE_REUNION:
+                    return handleCreateReunion(request);
+                case UPDATE_REUNION:
+                    return handleUpdateReunion(request);
+                case DELETE_REUNION:
+                    return handleDeleteReunion(request);
                 case DISCONNECT:
                     return handleDisconnect(request);
                 default:
@@ -571,6 +581,348 @@ public class RequestProcessor {
             SocketLogger.error("Error en handleGetReuniones", e);
             e.printStackTrace();
             return Response.error("Error obteniendo reuniones: " + e.getMessage());
+        }
+    }
+    
+    private Response handleCreateReunion(Request request) {
+        try {
+            SocketLogger.info("=== PROCESANDO CREATE_REUNION ===");
+            
+            JsonNode payload = objectMapper.readTree(request.getPayload());
+            
+            // Validar campos requeridos
+            if (!payload.has("profesorId") || !payload.has("alumnoId") || 
+                !payload.has("titulo") || !payload.has("fecha")) {
+                return Response.badRequest("Faltan campos requeridos para crear reunión");
+            }
+            
+            int profesorId = payload.get("profesorId").asInt();
+            int alumnoId = payload.get("alumnoId").asInt();
+            String titulo = payload.get("titulo").asText();
+            String asunto = payload.has("asunto") ? payload.get("asunto").asText() : "";
+            String aula = payload.has("aula") ? payload.get("aula").asText() : "";
+            String fechaStr = payload.get("fecha").asText();
+            
+            SocketLogger.info("Creando reunión: " + titulo + " para alumno " + alumnoId);
+            
+            Session session = HibernateUtil.getSessionFactory().openSession();
+            Transaction tx = null;
+            
+            try {
+                tx = session.beginTransaction();
+                
+                // Parsear fecha
+                LocalDateTime fecha = LocalDateTime.parse(fechaStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                
+                // No verificar conflictos - guardar siempre como pendiente
+                String estadoInicial = "pendiente";
+                
+                SocketLogger.info("Guardando reunión con estado: " + estadoInicial);
+                
+                // Insertar reunión en la BD
+                session.createNativeQuery(
+                    "INSERT INTO reuniones (estado, profesor_id, alumno_id, titulo, asunto, aula, fecha, id_centro) " +
+                    "VALUES (:estado, :profesorId, :alumnoId, :titulo, :asunto, :aula, :fecha, '15112')")
+                    .setParameter("estado", estadoInicial)
+                    .setParameter("profesorId", profesorId)
+                    .setParameter("alumnoId", alumnoId)
+                    .setParameter("titulo", titulo)
+                    .setParameter("asunto", asunto)
+                    .setParameter("aula", aula)
+                    .setParameter("fecha", fecha)
+                    .executeUpdate();
+                
+                tx.commit();
+                
+                SocketLogger.info("✅ Reunión creada exitosamente con estado: " + estadoInicial);
+                
+                // Enviar correos electrónicos
+                try {
+                    EmailService emailService = EmailServiceHolder.getEmailService();
+                    if (emailService != null) {
+                        // Obtener emails del profesor y alumno
+                        Object[] profesor = (Object[]) session.createNativeQuery(
+                            "SELECT nombre, apellidos, email FROM users WHERE id = :id")
+                            .setParameter("id", profesorId)
+                            .uniqueResult();
+                        
+                        Object[] alumno = (Object[]) session.createNativeQuery(
+                            "SELECT email FROM users WHERE id = :id")
+                            .setParameter("id", alumnoId)
+                            .uniqueResult();
+                        
+                        if (profesor != null && alumno != null) {
+                            String nombreProfesor = profesor[0] + " " + profesor[1];
+                            String emailAlumno = (String) alumno[0];
+                            String fechaFormato = fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                            String horaFormato = fecha.format(DateTimeFormatter.ofPattern("HH:mm"));
+                            
+                            try {
+                                emailService.sendReunionCreada(emailAlumno, nombreProfesor, 
+                                                             titulo, fechaFormato, horaFormato, aula);
+                                SocketLogger.info("📧 Correo enviado a alumno: " + emailAlumno);
+                            } catch (Exception emailEx) {
+                                SocketLogger.error("Error al enviar correo a alumno: " + emailEx.getMessage(), emailEx);
+                            }
+                        } else {
+                            SocketLogger.warning("No se encontraron datos del profesor o alumno para enviar correo");
+                        }
+                    } else {
+                        SocketLogger.warning("⚠️ EmailService no disponible - no se envió correo. Verifica la configuración de Spring Mail en application.properties");
+                    }
+                } catch (Exception e) {
+                    SocketLogger.error("Error en el proceso de envío de correo: " + e.getMessage(), e);
+                    // No fallar la operación si el correo falla
+                }
+                
+                return Response.success("Reunión creada exitosamente", 
+                    "{\"estado\":\"" + estadoInicial + "\"}");
+                
+            } catch (Exception e) {
+                if (tx != null) tx.rollback();
+                SocketLogger.error("Error creando reunión", e);
+                throw e;
+            } finally {
+                session.close();
+            }
+            
+        } catch (Exception e) {
+            SocketLogger.error("Error en handleCreateReunion", e);
+            return Response.error("Error creando reunión: " + e.getMessage());
+        }
+    }
+    
+    private Response handleUpdateReunion(Request request) {
+        try {
+            SocketLogger.info("=== PROCESANDO UPDATE_REUNION ===");
+            
+            JsonNode payload = objectMapper.readTree(request.getPayload());
+            
+            if (!payload.has("reunionId") || !payload.has("estado")) {
+                return Response.badRequest("Faltan campos requeridos para actualizar reunión");
+            }
+            
+            int reunionId = payload.get("reunionId").asInt();
+            String nuevoEstado = payload.get("estado").asText();
+            
+            SocketLogger.info("Actualizando reunión " + reunionId + " a estado: " + nuevoEstado);
+            
+            Session session = HibernateUtil.getSessionFactory().openSession();
+            Transaction tx = null;
+            
+            try {
+                tx = session.beginTransaction();
+                
+                // Obtener información de la reunión antes de actualizar
+                Object[] reunion = (Object[]) session.createNativeQuery(
+                    "SELECT titulo, fecha, profesor_id, alumno_id FROM reuniones " +
+                    "WHERE id_reunion = :id")
+                    .setParameter("id", reunionId)
+                    .uniqueResult();
+                
+                if (reunion == null) {
+                    return Response.error("Reunión no encontrada");
+                }
+                
+                String titulo = (String) reunion[0];
+                
+                // Manejar conversión de fecha de forma segura
+                LocalDateTime fecha;
+                Object fechaObj = reunion[1];
+                if (fechaObj instanceof java.sql.Timestamp) {
+                    fecha = ((java.sql.Timestamp) fechaObj).toLocalDateTime();
+                } else if (fechaObj instanceof LocalDateTime) {
+                    fecha = (LocalDateTime) fechaObj;
+                } else {
+                    SocketLogger.warning("Tipo de fecha inesperado: " + fechaObj.getClass().getName());
+                    return Response.error("Error procesando fecha de reunión");
+                }
+                
+                int profesorId = ((Number) reunion[2]).intValue();
+                int alumnoId = ((Number) reunion[3]).intValue();
+                
+                // Actualizar estado
+                int updated = session.createNativeQuery(
+                    "UPDATE reuniones SET estado = :estado WHERE id_reunion = :id")
+                    .setParameter("estado", nuevoEstado)
+                    .setParameter("id", reunionId)
+                    .executeUpdate();
+                
+                if (updated == 0) {
+                    return Response.error("No se pudo actualizar la reunión");
+                }
+                
+                tx.commit();
+                
+                SocketLogger.info("✅ Estado de reunión actualizado");
+                
+                // Enviar correos
+                try {
+                    EmailService emailService = EmailServiceHolder.getEmailService();
+                    if (emailService != null) {
+                        // Obtener emails
+                        String emailAlumno = (String) session.createNativeQuery(
+                            "SELECT email FROM users WHERE id = :id")
+                            .setParameter("id", alumnoId)
+                            .uniqueResult();
+                        
+                        String emailProfesor = (String) session.createNativeQuery(
+                            "SELECT email FROM users WHERE id = :id")
+                            .setParameter("id", profesorId)
+                            .uniqueResult();
+                        
+                        String fechaFormato = fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                        String horaFormato = fecha.format(DateTimeFormatter.ofPattern("HH:mm"));
+                        
+                        if (emailAlumno != null) {
+                            emailService.sendReunionEstadoCambiado(emailAlumno, titulo, 
+                                                                 nuevoEstado, fechaFormato, horaFormato);
+                        }
+                        if (emailProfesor != null) {
+                            emailService.sendReunionEstadoCambiado(emailProfesor, titulo, 
+                                                                 nuevoEstado, fechaFormato, horaFormato);
+                        }
+                        
+                        SocketLogger.info("📧 Correos de actualización enviados");
+                    }
+                } catch (Exception e) {
+                    SocketLogger.warning("Error enviando correos: " + e.getMessage());
+                }
+                
+                return Response.success("Estado actualizado correctamente", null);
+                
+            } catch (Exception e) {
+                if (tx != null) tx.rollback();
+                SocketLogger.error("Error actualizando reunión", e);
+                throw e;
+            } finally {
+                session.close();
+            }
+            
+        } catch (Exception e) {
+            SocketLogger.error("Error en handleUpdateReunion", e);
+            return Response.error("Error actualizando reunión: " + e.getMessage());
+        }
+    }
+    
+    private Response handleDeleteReunion(Request request) {
+        try {
+            SocketLogger.info("=== PROCESANDO DELETE_REUNION ===");
+            
+            JsonNode payload = objectMapper.readTree(request.getPayload());
+            
+            if (!payload.has("reunionId")) {
+                return Response.badRequest("Falta reunionId");
+            }
+            
+            int reunionId = payload.get("reunionId").asInt();
+            
+            SocketLogger.info("Eliminando reunión: " + reunionId);
+            
+            Session session = HibernateUtil.getSessionFactory().openSession();
+            Transaction tx = null;
+            
+            try {
+                tx = session.beginTransaction();
+                
+                // Obtener información antes de eliminar
+                Object[] reunion = (Object[]) session.createNativeQuery(
+                    "SELECT titulo, fecha, profesor_id, alumno_id FROM reuniones " +
+                    "WHERE id_reunion = :id")
+                    .setParameter("id", reunionId)
+                    .uniqueResult();
+                
+                if (reunion == null) {
+                    return Response.error("Reunión no encontrada");
+                }
+                
+                String titulo = (String) reunion[0];
+                
+                // Manejar conversión de fecha de forma segura
+                LocalDateTime fecha;
+                Object fechaObj = reunion[1];
+                if (fechaObj instanceof java.sql.Timestamp) {
+                    fecha = ((java.sql.Timestamp) fechaObj).toLocalDateTime();
+                } else if (fechaObj instanceof LocalDateTime) {
+                    fecha = (LocalDateTime) fechaObj;
+                } else {
+                    SocketLogger.warning("Tipo de fecha inesperado: " + fechaObj.getClass().getName());
+                    return Response.error("Error procesando fecha de reunión");
+                }
+                
+                int profesorId = ((Number) reunion[2]).intValue();
+                int alumnoId = ((Number) reunion[3]).intValue();
+                
+                // Eliminar reunión
+                int deleted = session.createNativeQuery(
+                    "DELETE FROM reuniones WHERE id_reunion = :id")
+                    .setParameter("id", reunionId)
+                    .executeUpdate();
+                
+                if (deleted == 0) {
+                    return Response.error("No se pudo eliminar la reunión");
+                }
+                
+                tx.commit();
+                
+                SocketLogger.info("✅ Reunión eliminada");
+                
+                // Enviar correos
+                try {
+                    EmailService emailService = EmailServiceHolder.getEmailService();
+                    if (emailService != null) {
+                        String emailAlumno = (String) session.createNativeQuery(
+                            "SELECT email FROM users WHERE id = :id")
+                            .setParameter("id", alumnoId)
+                            .uniqueResult();
+                        
+                        String emailProfesor = (String) session.createNativeQuery(
+                            "SELECT email FROM users WHERE id = :id")
+                            .setParameter("id", profesorId)
+                            .uniqueResult();
+                        
+                        String fechaFormato = fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                        String horaFormato = fecha.format(DateTimeFormatter.ofPattern("HH:mm"));
+                        
+                        if (emailAlumno != null) {
+                            emailService.sendReunionEliminada(emailAlumno, titulo, fechaFormato, horaFormato);
+                        }
+                        if (emailProfesor != null) {
+                            emailService.sendReunionEliminada(emailProfesor, titulo, fechaFormato, horaFormato);
+                        }
+                        
+                        SocketLogger.info("📧 Correos de cancelación enviados");
+                    }
+                } catch (Exception e) {
+                    SocketLogger.warning("Error enviando correos: " + e.getMessage());
+                }
+                
+                return Response.success("Reunión eliminada correctamente", null);
+                
+            } catch (Exception e) {
+                if (tx != null) tx.rollback();
+                SocketLogger.error("Error eliminando reunión", e);
+                throw e;
+            } finally {
+                session.close();
+            }
+            
+        } catch (Exception e) {
+            SocketLogger.error("Error en handleDeleteReunion", e);
+            return Response.error("Error eliminando reunión: " + e.getMessage());
+        }
+    }
+    
+    private String obtenerDiaSemana(int dayOfWeek) {
+        switch (dayOfWeek) {
+            case 1: return "LUNES";
+            case 2: return "MARTES";
+            case 3: return "MIERCOLES";
+            case 4: return "JUEVES";
+            case 5: return "VIERNES";
+            case 6: return "SABADO";
+            case 7: return "DOMINGO";
+            default: return "";
         }
     }
     

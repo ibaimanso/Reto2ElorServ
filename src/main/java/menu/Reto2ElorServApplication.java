@@ -19,8 +19,6 @@ import util.HibernateUtil;
 	public static void main(String[] args) {
 		SpringApplication.run(Reto2ElorServApplication.class, args);
 		
-		
-		
 	}
 	@Bean
     ApplicationRunner socketServerRunner() {
